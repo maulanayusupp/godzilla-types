@@ -69,7 +69,7 @@ defineProps<{
 }
 
 .title {
-  font-size: clamp(2.75rem, 9vw, 5.25rem);
+  font-size: clamp(2rem, 8.5vw, 5.25rem);
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -118,5 +118,18 @@ defineProps<{
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+@media (max-width: 640px) {
+  .stat {
+    min-width: 0;
+    flex: 1;
+    padding: 0.55rem 0.9rem;
+  }
+
+  .stats {
+    width: 100%;
+    max-width: 360px;
+  }
 }
 </style>

@@ -2,7 +2,6 @@
   <footer class="footer">
     <GodzillaLogo class="mark" />
     <p>Dibuat untuk para penggemar kaiju — data bersifat ringkasan dari berbagai film Godzilla.</p>
-    <p class="tech">Dibangun dengan Nuxt &amp; Vue</p>
   </footer>
 </template>
 
@@ -24,10 +23,5 @@
   width: 30px;
   height: 30px;
   opacity: 0.75;
-}
-
-.tech {
-  font-size: 0.78rem;
-  opacity: 0.7;
 }
 </style>
