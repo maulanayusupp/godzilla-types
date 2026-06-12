@@ -83,6 +83,7 @@ useHead({
 
       <p class="count" role="status">
         Menampilkan <strong>{{ filtered.length }}</strong> dari {{ GODZILLAS.length }} Godzilla
+        <span class="swipe-hint">— geser ke samping →</span>
       </p>
 
       <section v-if="filtered.length" class="grid">
@@ -137,6 +138,44 @@ useHead({
   grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
   gap: 1.4rem;
   padding-bottom: 1rem;
+}
+
+.swipe-hint {
+  display: none;
+}
+
+/* Mobile: carousel geser ke samping dengan snap per kartu */
+@media (max-width: 640px) {
+  .swipe-hint {
+    display: inline;
+    opacity: 0.8;
+  }
+
+  .grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: min(82vw, 320px);
+    gap: 0.9rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 1.25rem;
+    margin: 0 -1.25rem;
+    padding: 0.25rem 1.25rem 1.25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .grid > * {
+    scroll-snap-align: center;
+  }
+
+  .grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .grid::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+  }
 }
 
 .empty {

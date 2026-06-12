@@ -28,6 +28,25 @@ const model = defineModel<string>({ default: 'all' })
   gap: 0.5rem;
 }
 
+/* Mobile: satu baris yang bisa digeser ke samping */
+@media (max-width: 640px) {
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chip {
+    flex-shrink: 0;
+  }
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

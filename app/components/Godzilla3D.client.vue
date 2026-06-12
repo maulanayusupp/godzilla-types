@@ -117,11 +117,6 @@ const ATTACK_HOLD: Record<AttackKind, number> = {
 
 const container = ref<HTMLDivElement | null>(null)
 const stateLabel = ref('Berjalan mengelilingi arena')
-// Tombol "Serang!" men-trigger fase mengancam → menyerang seketika
-let forceAggro = false
-function triggerAttack() {
-  forceAggro = true
-}
 
 let renderer: THREE.WebGLRenderer | null = null
 let composer: EffectComposer | null = null
@@ -840,15 +835,16 @@ function init() {
     const dt = Math.min(0.05, t - tPrev)
     tPrev = t
 
-    // Transisi state (tombol Serang! melompat langsung ke fase mengancam)
-    if (forceAggro && state !== 'aggro' && state !== 'attack') {
-      forceAggro = false
-      state = 'aggro'
-      stateT0 = t
-      stateLabel.value = LABELS[state]
-    } else if (t - stateT0 > durFor(state, cyc)) {
+    // Transisi state otomatis. Setelah mengamati, kadang menyerang,
+    // kadang hanya lanjut berjalan — kecuali siklus pertama selalu
+    // menyerang agar cepat terlihat.
+    if (t - stateT0 > durFor(state, cyc)) {
       if (state === 'cool') cyc++
-      state = NEXT[state]
+      if (state === 'idle' && cyc > 0 && rnd(cyc * 7 + 3) < 0.45) {
+        state = 'walk'
+      } else {
+        state = NEXT[state]
+      }
       stateT0 = t
       stateLabel.value = LABELS[state]
     }
@@ -1149,7 +1145,6 @@ onBeforeUnmount(cleanup)
   <div ref="container" class="viewer">
     <span class="attack-label">⚡ {{ bh.label }}</span>
     <span class="state-label">{{ stateLabel }}</span>
-    <button class="attack-btn" type="button" @click="triggerAttack">⚡ Serang!</button>
     <span class="hint">🖱️ Seret untuk memutar · scroll untuk zoom</span>
   </div>
 </template>
@@ -1195,26 +1190,6 @@ onBeforeUnmount(cleanup)
   border-radius: 999px;
   pointer-events: none;
   white-space: nowrap;
-}
-
-.attack-btn {
-  position: absolute;
-  bottom: 0.6rem;
-  right: 0.8rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #0a0e0b;
-  background: var(--accent, #4ade80);
-  border: none;
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform 0.15s, filter 0.15s;
-}
-
-.attack-btn:hover {
-  transform: scale(1.06);
-  filter: brightness(1.1);
 }
 
 .hint {
