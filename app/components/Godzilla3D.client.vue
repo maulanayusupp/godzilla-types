@@ -13,36 +13,37 @@ const props = defineProps<{
 
 // ===== Profil perilaku per varian =====
 type AttackKind =
-  | 'beam' // sinar mulut standar
-  | 'sweep' // sinar disapukan ke kiri-kanan (1954)
-  | 'double' // dua tembakan beruntun (Millennium)
-  | 'burst' // tiga semburan pendek cepat (Evolved)
-  | 'spiral' // sinar berpilin (Heisei)
-  | 'meltdown' // sinar spiral + seluruh tubuh membara (Burning)
-  | 'backBeams' // sinar mulut + punggung + ekor (Shin)
-  | 'charge' // sirip menyala berurutan lalu ledakan besar (Minus One)
-  | 'pulse' // gelombang kejut tanpa laser (Earth)
-  | 'punch' // bertarung tinju, tanpa laser (Showa hero)
+  | 'beam'
+  | 'sweep'
+  | 'double'
+  | 'burst'
+  | 'spiral'
+  | 'meltdown'
+  | 'backBeams'
+  | 'charge'
+  | 'pulse'
+  | 'punch'
 
 interface Behavior {
   attack: AttackKind
   label: string
-  period: number // jarak antar aksi (detik)
-  scale: number // ukuran tubuh
+  scale: number
   speed: number // pengali kecepatan gerakan idle
-  tailAmp: number // seberapa aktif ekor
-  headSway: number // amplitudo kepala menoleh saat idle
+  tailAmp: number
+  headSway: number
   rotate: number // kecepatan auto-rotate kamera
   lean: number // postur condong ke depan
   beamWidth: number
-  twitchy?: boolean // gerakan patah-patah (Shin)
-  rings?: boolean // cincin distorsi (Ultima)
+  walkSpeed: number // kecepatan keliling arena (rad/detik)
+  strideFreq: number // frekuensi langkah
+  twitchy?: boolean
+  rings?: boolean
+  stomper?: boolean // menghentak tanah saat mengancam
 }
 
 const DEFAULT_BEHAVIOR: Behavior = {
   attack: 'beam',
   label: 'Atomic Breath',
-  period: 7,
   scale: 1,
   speed: 1,
   tailAmp: 1,
@@ -50,26 +51,27 @@ const DEFAULT_BEHAVIOR: Behavior = {
   rotate: 1.7,
   lean: 0.05,
   beamWidth: 1,
+  walkSpeed: 0.18,
+  strideFreq: 2.2,
 }
 
 const BEHAVIORS: Record<string, Partial<Behavior>> = {
-  'showa-1954': { attack: 'sweep', label: 'Sapuan Atomic Breath', period: 9, speed: 0.8, tailAmp: 0.8, headSway: 0.12, rotate: 1.2 },
-  'showa-hero': { attack: 'punch', label: 'Petarung Jarak Dekat', period: 6, speed: 1.3, tailAmp: 1.2, headSway: 0.2, rotate: 1.8, lean: 0.04 },
-  'heisei': { attack: 'spiral', label: 'Spiral Ray', period: 8, scale: 1.05, speed: 0.9, tailAmp: 0.9, rotate: 1.4, beamWidth: 1.1 },
-  'burning': { attack: 'meltdown', label: 'Meltdown Nuklir', period: 6.5, scale: 1.05, speed: 1.1, rotate: 1.5, beamWidth: 1.15 },
-  'millennium': { attack: 'double', label: 'Tembakan Ganda', period: 6, speed: 1.3, tailAmp: 1.4, headSway: 0.18, rotate: 2.2, lean: 0.06 },
-  'gmk': { attack: 'beam', label: 'Teror Arwah', period: 9.5, speed: 0.45, tailAmp: 0.6, headSway: 0.34, rotate: 0.9, lean: 0.03 },
-  'shin': { attack: 'backBeams', label: 'Sinar Punggung & Ekor', period: 8, scale: 1.08, headSway: 0.1, rotate: 1.1, lean: 0.2, beamWidth: 0.6, twitchy: true },
-  'ultima': { attack: 'beam', label: 'Medan Distorsi', period: 6.5, speed: 1.2, tailAmp: 1.6, rotate: 1.6, lean: 0.08, beamWidth: 0.9, rings: true },
-  'minus-one': { attack: 'charge', label: 'Isian Daya Sirip', period: 9.5, scale: 0.97, speed: 0.9, tailAmp: 0.9, headSway: 0.13, rotate: 1.3, lean: 0.07, beamWidth: 1.7 },
-  'earth': { attack: 'pulse', label: 'Gelombang Elektromagnetik', period: 11, scale: 1.3, speed: 0.5, tailAmp: 0.5, headSway: 0.08, rotate: 0.8, lean: 0.03 },
-  'legendary': { attack: 'beam', label: 'Atomic Breath Alpha', period: 7, scale: 1.12, headSway: 0.15, rotate: 1.6, lean: 0, beamWidth: 1.35 },
-  'evolved': { attack: 'burst', label: 'Burst Cepat', period: 5, speed: 1.45, tailAmp: 1.5, headSway: 0.2, rotate: 2.4, lean: 0.04, beamWidth: 0.9 },
+  'showa-1954': { attack: 'sweep', label: 'Sapuan Atomic Breath', speed: 0.8, tailAmp: 0.8, headSway: 0.12, rotate: 1.2, walkSpeed: 0.13, strideFreq: 1.7, stomper: true },
+  'showa-hero': { attack: 'punch', label: 'Petarung Jarak Dekat', speed: 1.3, tailAmp: 1.2, headSway: 0.2, rotate: 1.8, lean: 0.04, walkSpeed: 0.24, strideFreq: 2.7 },
+  'heisei': { attack: 'spiral', label: 'Spiral Ray', scale: 1.05, speed: 0.9, tailAmp: 0.9, rotate: 1.4, beamWidth: 1.1, walkSpeed: 0.15, strideFreq: 1.9 },
+  'burning': { attack: 'meltdown', label: 'Meltdown Nuklir', scale: 1.05, speed: 1.1, rotate: 1.5, beamWidth: 1.15, walkSpeed: 0.12, strideFreq: 1.8 },
+  'millennium': { attack: 'double', label: 'Tembakan Ganda', speed: 1.3, tailAmp: 1.4, headSway: 0.18, rotate: 2.2, lean: 0.06, walkSpeed: 0.26, strideFreq: 2.8 },
+  'gmk': { attack: 'beam', label: 'Teror Arwah', speed: 0.45, tailAmp: 0.6, headSway: 0.34, rotate: 0.9, lean: 0.03, walkSpeed: 0.1, strideFreq: 1.5 },
+  'shin': { attack: 'backBeams', label: 'Sinar Punggung & Ekor', scale: 1.08, headSway: 0.1, rotate: 1.1, lean: 0.2, beamWidth: 0.6, twitchy: true, walkSpeed: 0.11, strideFreq: 1.8 },
+  'ultima': { attack: 'beam', label: 'Medan Distorsi', speed: 1.2, tailAmp: 1.6, rotate: 1.6, lean: 0.08, beamWidth: 0.9, rings: true, walkSpeed: 0.2, strideFreq: 2.4 },
+  'minus-one': { attack: 'charge', label: 'Isian Daya Sirip', scale: 0.97, speed: 0.9, tailAmp: 0.9, headSway: 0.13, rotate: 1.3, lean: 0.07, beamWidth: 1.7, walkSpeed: 0.16, strideFreq: 2.0 },
+  'earth': { attack: 'pulse', label: 'Gelombang Elektromagnetik', scale: 1.3, speed: 0.5, tailAmp: 0.5, headSway: 0.08, rotate: 0.8, lean: 0.03, walkSpeed: 0.08, strideFreq: 1.25, stomper: true },
+  'legendary': { attack: 'beam', label: 'Atomic Breath Alpha', scale: 1.12, headSway: 0.15, rotate: 1.6, lean: 0, beamWidth: 1.35, walkSpeed: 0.17, strideFreq: 2.0 },
+  'evolved': { attack: 'burst', label: 'Burst Cepat', speed: 1.45, tailAmp: 1.5, headSway: 0.2, rotate: 2.4, lean: 0.04, beamWidth: 0.9, walkSpeed: 0.32, strideFreq: 3.3 },
 }
 
 const bh: Behavior = { ...DEFAULT_BEHAVIOR, ...(BEHAVIORS[props.godzilla.id] ?? {}) }
 
-/** Jendela waktu (dalam fase siklus) saat sinar menyembur. */
 function fireWindows(kind: AttackKind): Array<[number, number]> {
   switch (kind) {
     case 'sweep':
@@ -114,6 +116,12 @@ const ATTACK_HOLD: Record<AttackKind, number> = {
 }
 
 const container = ref<HTMLDivElement | null>(null)
+const stateLabel = ref('Berjalan mengelilingi arena')
+// Tombol "Serang!" men-trigger fase mengancam → menyerang seketika
+let forceAggro = false
+function triggerAttack() {
+  forceAggro = true
+}
 
 let renderer: THREE.WebGLRenderer | null = null
 let composer: EffectComposer | null = null
@@ -122,32 +130,52 @@ let scene: THREE.Scene | null = null
 let rafId = 0
 let resizeObserver: ResizeObserver | null = null
 
-// Bagian yang dianimasikan tiap frame
-let chest: THREE.Mesh | null = null
-let jaw: THREE.Group | null = null
+// ===== Rig artikulasi =====
+interface LegRig {
+  hip: THREE.Group
+  knee: THREE.Group
+  ankle: THREE.Group
+}
+
+let kaiju: THREE.Group | null = null
+let pelvis: THREE.Group | null = null
+let spineLower: THREE.Group | null = null
+let spineUpper: THREE.Group | null = null
 let head: THREE.Group | null = null
+let jaw: THREE.Group | null = null
+let legs: LegRig[] = []
+let arms: THREE.Group[] = []
+let tailSegments: THREE.Group[] = []
+let chest: THREE.Mesh | null = null
+
+// Efek
 let beam: THREE.Group | null = null
 let beamOuterMat: THREE.MeshBasicMaterial | null = null
 let beamCoreMat: THREE.MeshBasicMaterial | null = null
 let mouthLight: THREE.PointLight | null = null
-let tailSegments: THREE.Group[] = []
 let glowMat: THREE.MeshStandardMaterial | null = null
 let bodyMatRef: THREE.MeshStandardMaterial | null = null
-let kaiju: THREE.Group | null = null
 let particles: THREE.Points | null = null
 let particleBase: Float32Array | null = null
 let bumpTex: THREE.CanvasTexture | null = null
-let arms: THREE.Group[] = []
 let spiral: THREE.Mesh | null = null
 let backBeams: THREE.Group[] = []
 let pulseShells: THREE.Mesh[] = []
 let chargeFinMats: THREE.MeshStandardMaterial[] = []
 let distortRings: THREE.Mesh[] = []
+let stompRing: THREE.Mesh | null = null
 
-/**
- * Geser tiap vertex sepanjang normalnya dengan noise deterministik —
- * membuat permukaan halus jadi berbonggol organik seperti kulit kaiju.
- */
+/** Acak deterministik agar durasi tiap siklus bervariasi tanpa Math.random di loop. */
+function rnd(n: number): number {
+  const x = Math.sin(n * 127.1) * 43758.5453
+  return x - Math.floor(x)
+}
+
+function smooth(x: number): number {
+  const c = Math.min(1, Math.max(0, x))
+  return c * c * (3 - 2 * c)
+}
+
 function roughen(geo: THREE.BufferGeometry, amt: number, freq = 1): THREE.BufferGeometry {
   const pos = geo.attributes.position as THREE.BufferAttribute
   const nor = geo.attributes.normal as THREE.BufferAttribute
@@ -160,19 +188,13 @@ function roughen(geo: THREE.BufferGeometry, amt: number, freq = 1): THREE.Buffer
         Math.sin(y * 13 * freq + 4.1) +
         Math.sin(z * 12 * freq + 2.2)) /
       3
-    pos.setXYZ(
-      i,
-      x + nor.getX(i) * d * amt,
-      y + nor.getY(i) * d * amt,
-      z + nor.getZ(i) * d * amt,
-    )
+    pos.setXYZ(i, x + nor.getX(i) * d * amt, y + nor.getY(i) * d * amt, z + nor.getZ(i) * d * amt)
   }
   pos.needsUpdate = true
   geo.computeVertexNormals()
   return geo
 }
 
-/** Tekstur bump dari kanvas: bintik acak agar kulit terlihat bersisik. */
 function makeBumpTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas')
   c.width = c.height = 256
@@ -192,7 +214,6 @@ function makeBumpTexture(): THREE.CanvasTexture {
   return tex
 }
 
-/** Sirip punggung bergerigi khas Godzilla (bidang pipih, bukan kerucut). */
 function makeFinGeometry(): THREE.ExtrudeGeometry {
   const s = new THREE.Shape()
   s.moveTo(-0.5, 0)
@@ -218,7 +239,6 @@ function makeFinGeometry(): THREE.ExtrudeGeometry {
   })
 }
 
-/** Sinar energi tipis (untuk punggung/ekor Shin). */
 function makeMiniBeam(color: string, length: number): THREE.Group {
   const grp = new THREE.Group()
   const mat = new THREE.MeshBasicMaterial({
@@ -280,35 +300,49 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
     return m
   }
 
-  // ===== Torso =====
-  const hips = add(roughen(new THREE.SphereGeometry(0.54, 24, 18), 0.03, 1.4), bodyMat, [0, 1.05, 0])
+  // ===== Rangka badan: panggul → punggung bawah → punggung atas =====
+  pelvis = new THREE.Group()
+  pelvis.position.set(0, 1.05, 0)
+  g.add(pelvis)
+  const hips = add(roughen(new THREE.SphereGeometry(0.54, 24, 18), 0.03, 1.4), bodyMat, [0, 0, 0], pelvis)
   hips.scale.set(1, 0.88, 0.95)
+
+  spineLower = new THREE.Group()
+  spineLower.position.set(0, 0.3, 0)
+  pelvis.add(spineLower)
   const belly = add(
     roughen(new THREE.CylinderGeometry(0.44, 0.52, 0.8, 20, 6), 0.03, 1.6),
     bodyMat,
-    [0, 1.55, 0],
+    [0, 0.2, 0],
+    spineLower,
   )
   belly.scale.set(1, 1, 0.92)
-  chest = add(roughen(new THREE.SphereGeometry(0.48, 24, 18), 0.03, 1.5), bodyMat, [0, 2.02, 0])
-  chest.scale.set(1, 0.95, 0.85)
   const plates = add(
     roughen(new THREE.CylinderGeometry(0.3, 0.4, 1.05, 14, 8), 0.02, 3.2),
     bellyMat,
-    [0, 1.5, 0.17],
+    [0, 0.15, 0.17],
+    spineLower,
   )
   plates.scale.set(0.82, 1, 0.55)
+
+  spineUpper = new THREE.Group()
+  spineUpper.position.set(0, 0.55, 0)
+  spineLower.add(spineUpper)
+  chest = add(roughen(new THREE.SphereGeometry(0.48, 24, 18), 0.03, 1.5), bodyMat, [0, 0.12, 0], spineUpper)
+  chest.scale.set(1, 0.95, 0.85)
   const neck = add(
     roughen(new THREE.CylinderGeometry(0.2, 0.32, 0.6, 16, 4), 0.025, 2),
     bodyMat,
-    [0, 2.45, 0.08],
+    [0, 0.55, 0.08],
+    spineUpper,
   )
   neck.rotation.x = 0.25
 
-  // ===== Kepala reptilian =====
+  // ===== Kepala =====
   const h = new THREE.Group()
   head = h
-  h.position.set(0, 2.8, 0.18)
-  g.add(h)
+  h.position.set(0, 0.9, 0.18)
+  spineUpper.add(h)
   const skull = add(roughen(new THREE.SphereGeometry(0.27, 22, 16), 0.02, 2.4), bodyMat, [0, 0, 0], h)
   skull.scale.set(1, 0.85, 1.15)
   const snout = add(roughen(new THREE.SphereGeometry(0.18, 18, 14), 0.015, 3), bodyMat, [0, -0.05, 0.34], h)
@@ -354,7 +388,6 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
     add(new THREE.ConeGeometry(0.018, 0.055 + (i % 2) * 0.012, 6), toothMat, [x, 0.04, z], jaw)
   })
 
-  // Mata menyala + alis tebal
   for (const s of [1, -1]) {
     add(new THREE.SphereGeometry(0.05, 10, 8), glowMat, [s * 0.18, 0.05, 0.21], h)
     const brow = add(roughen(new THREE.SphereGeometry(0.09, 10, 8), 0.012, 3), bodyMat, [s * 0.17, 0.13, 0.2], h)
@@ -397,7 +430,6 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
   mouthLight.position.set(0, 0, 0.6)
   b.add(mouthLight)
 
-  // Pilinan energi mengelilingi sinar (Heisei & Burning)
   if (bh.attack === 'spiral' || bh.attack === 'meltdown') {
     const helixPts: THREE.Vector3[] = []
     for (let i = 0; i <= 110; i++) {
@@ -419,12 +451,12 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
     b.add(spiral)
   }
 
-  // ===== Lengan (grup berporos di bahu agar bisa meninju) =====
+  // ===== Lengan (berporos di bahu, menempel ke punggung atas) =====
   arms = []
   for (const s of [1, -1]) {
     const arm = new THREE.Group()
-    arm.position.set(s * 0.37, 2.13, 0.1)
-    g.add(arm)
+    arm.position.set(s * 0.37, 0.23, 0.1)
+    spineUpper.add(arm)
     add(roughen(new THREE.SphereGeometry(0.13, 12, 10), 0.015, 3), bodyMat, [0, 0, 0], arm)
     const upper = add(
       roughen(new THREE.CylinderGeometry(0.075, 0.1, 0.36, 12, 3), 0.015, 3),
@@ -453,34 +485,48 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
     arms.push(arm)
   }
 
-  // ===== Kaki kekar dengan cakar =====
+  // ===== Kaki berartikulasi: pinggul → lutut → pergelangan =====
+  legs = []
   for (const s of [1, -1]) {
+    const hip = new THREE.Group()
+    hip.position.set(s * 0.31, 1.02, 0)
+    g.add(hip)
     const thigh = add(
       roughen(new THREE.CylinderGeometry(0.18, 0.27, 0.6, 16, 4), 0.025, 2),
       bodyMat,
-      [s * 0.31, 0.72, 0],
+      [0, -0.3, 0],
+      hip,
     )
     thigh.rotation.z = s * -0.08
+
+    const knee = new THREE.Group()
+    knee.position.set(s * 0.03, -0.58, 0.03)
+    hip.add(knee)
     add(
       roughen(new THREE.CylinderGeometry(0.13, 0.18, 0.48, 14, 3), 0.02, 2.4),
       bodyMat,
-      [s * 0.34, 0.36, 0.04],
+      [0, -0.08, 0.01],
+      knee,
     )
-    const foot = add(roughen(new THREE.SphereGeometry(0.19, 14, 10), 0.02, 2.6), bodyMat, [s * 0.34, 0.1, 0.12])
+
+    const ankle = new THREE.Group()
+    ankle.position.set(0, -0.3, 0.03)
+    knee.add(ankle)
+    const foot = add(roughen(new THREE.SphereGeometry(0.19, 14, 10), 0.02, 2.6), bodyMat, [0, -0.04, 0.06], ankle)
     foot.scale.set(0.95, 0.55, 1.5)
     for (let i = -1; i <= 1; i++) {
-      const claw = add(new THREE.ConeGeometry(0.04, 0.14, 6), clawMat, [s * 0.34 + i * 0.1, 0.06, 0.38])
+      const claw = add(new THREE.ConeGeometry(0.04, 0.14, 6), clawMat, [i * 0.1, -0.08, 0.32], ankle)
       claw.rotation.x = 1.35
     }
+    legs.push({ hip, knee, ankle })
   }
 
-  // ===== Ekor + sirip =====
+  // ===== Ekor (menempel ke panggul) =====
   tailSegments = []
   const tailFinMats: THREE.MeshStandardMaterial[] = []
-  let parent: THREE.Object3D = g
+  let parent: THREE.Object3D = pelvis
   const finGeo = makeFinGeometry()
   const finMatFor = (store: THREE.MeshStandardMaterial[]): THREE.MeshStandardMaterial => {
-    // Minus One butuh material terpisah per sirip untuk animasi charge berurutan
     if (bh.attack === 'charge') {
       const m = glowMat!.clone()
       store.push(m)
@@ -490,7 +536,7 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
   }
   for (let i = 0; i < 10; i++) {
     const seg = new THREE.Group()
-    if (i === 0) seg.position.set(0, 1.02, -0.44)
+    if (i === 0) seg.position.set(0, -0.03, -0.44)
     else seg.position.set(0, i < 4 ? -0.025 : 0.02, -0.29)
     parent.add(seg)
     const r = Math.max(0.3 - i * 0.028, 0.04)
@@ -509,42 +555,49 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
     parent = seg
   }
 
-  // ===== Sirip punggung utama =====
+  // ===== Sirip punggung: ikut melengkung bersama tulang belakang =====
   const spineFinMats: THREE.MeshStandardMaterial[] = []
-  const spine: Array<[number, number, number]> = [
+  const spineDefs: Array<[number, number, number]> = [
     [2.5, -0.26, 0.42],
     [2.18, -0.46, 0.66],
     [1.84, -0.58, 0.9],
     [1.48, -0.62, 0.95],
     [1.14, -0.6, 0.7],
   ]
-  for (const [y, z, fs] of spine) {
+  for (const [wy, z, fs] of spineDefs) {
+    // Sirip atas menempel ke punggung atas (poros dunia y=1.9),
+    // sirip bawah ke punggung bawah (poros dunia y=1.35)
+    const toUpper = wy >= 1.6
+    const host = toUpper ? spineUpper! : spineLower!
+    const relY = toUpper ? wy - 1.9 : wy - 1.35
     const mat = finMatFor(spineFinMats)
     const fin = new THREE.Mesh(finGeo, mat)
     fin.scale.set(fs, fs, fs)
-    fin.position.set(0, y, z)
+    fin.position.set(0, relY, z)
     fin.rotation.y = Math.PI / 2
     fin.castShadow = true
-    g.add(fin)
+    host.add(fin)
     for (const s of [1, -1]) {
       const small = new THREE.Mesh(finGeo, mat)
       small.scale.set(fs * 0.45, fs * 0.45, fs * 0.45)
-      small.position.set(s * 0.15, y - 0.08, z + 0.06)
+      small.position.set(s * 0.15, relY - 0.08, z + 0.06)
       small.rotation.y = Math.PI / 2
-      g.add(small)
+      host.add(small)
     }
   }
-  // Urutan charge Minus One: dari ujung ekor → pangkal → punggung bawah → atas
   chargeFinMats = [...tailFinMats.reverse(), ...spineFinMats.reverse()]
 
-  // Sinar punggung & ekor untuk Shin Godzilla
+  // Sinar punggung & ekor Shin
   backBeams = []
   if (bh.attack === 'backBeams') {
-    spine.forEach(([y, z], i) => {
+    spineDefs.forEach(([wy, z], i) => {
+      const toUpper = wy >= 1.6
+      const host = toUpper ? spineUpper! : spineLower!
+      const relY = (toUpper ? wy - 1.9 : wy - 1.35) + 0.25
       const mini = makeMiniBeam(glowColor, 3)
-      mini.position.set(0, y + 0.25, z)
+      mini.position.set(0, relY, z)
       mini.rotation.x = -2.25 + i * 0.12
-      g.add(mini)
+      host.add(mini)
       backBeams.push(mini)
     })
     const tailBeam = makeMiniBeam(glowColor, 3.5)
@@ -554,10 +607,66 @@ function buildKaiju(bodyColor: string, glowColor: string): THREE.Group {
     backBeams.push(tailBeam)
   }
 
-  // Postur condong ke depan sesuai karakter
-  g.rotation.x = bh.lean
-  g.scale.setScalar(bh.scale)
+  // Cincin hentakan kaki / gelombang tanah
+  stompRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.4, 0.52, 48),
+    new THREE.MeshBasicMaterial({
+      color: glowColor,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  )
+  stompRing.rotation.x = -Math.PI / 2
+  stompRing.position.y = 0.02
+  stompRing.visible = false
+  g.add(stompRing)
 
+  // Cincin distorsi Ultima mengikuti tubuh
+  distortRings = []
+  if (bh.rings) {
+    for (let i = 0; i < 2; i++) {
+      const ringMesh = new THREE.Mesh(
+        new THREE.TorusGeometry(1.35 + i * 0.35, 0.012, 8, 90),
+        new THREE.MeshBasicMaterial({
+          color: glowColor,
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        }),
+      )
+      ringMesh.position.y = 1.5
+      g.add(ringMesh)
+      distortRings.push(ringMesh)
+    }
+  }
+
+  // Cangkang gelombang kejut Earth mengikuti tubuh
+  pulseShells = []
+  if (bh.attack === 'pulse') {
+    for (let i = 0; i < 3; i++) {
+      const shell = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 24, 16),
+        new THREE.MeshBasicMaterial({
+          color: glowColor,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        }),
+      )
+      shell.position.y = 1.4
+      shell.visible = false
+      g.add(shell)
+      pulseShells.push(shell)
+    }
+  }
+
+  g.scale.setScalar(bh.scale)
   return g
 }
 
@@ -573,7 +682,7 @@ function init() {
 
   const sc = bh.scale
   const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 50)
-  camera.position.set(3.4 * sc, 2.3 * sc, 4.4 * sc)
+  camera.position.set(3.6 * sc, 2.4 * sc, 4.6 * sc)
 
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -592,7 +701,7 @@ function init() {
   controls.autoRotate = true
   controls.autoRotateSpeed = bh.rotate
   controls.minDistance = 2.5 * sc
-  controls.maxDistance = 8 * sc
+  controls.maxDistance = 9 * sc
   controls.maxPolarAngle = 1.5
 
   scene.add(new THREE.HemisphereLight(0x6b7f72, 0x05080a, 0.7))
@@ -600,8 +709,8 @@ function init() {
   key.position.set(3.5, 6, 3)
   key.castShadow = true
   key.shadow.mapSize.set(1024, 1024)
-  key.shadow.camera.left = key.shadow.camera.bottom = -5
-  key.shadow.camera.right = key.shadow.camera.top = 5
+  key.shadow.camera.left = key.shadow.camera.bottom = -5.5
+  key.shadow.camera.right = key.shadow.camera.top = 5.5
   key.shadow.camera.near = 1
   key.shadow.camera.far = 16
   key.shadow.bias = -0.002
@@ -613,16 +722,15 @@ function init() {
   rim.position.set(-2.6, 2.6, -2.6)
   scene.add(rim)
 
-  // Lantai arena
   const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(3.5 * sc, 48),
+    new THREE.CircleGeometry(4 * sc, 48),
     new THREE.MeshStandardMaterial({ color: 0x0c1310, roughness: 1 }),
   )
   floor.rotation.x = -Math.PI / 2
   floor.receiveShadow = true
   scene.add(floor)
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(2.6 * sc, 2.72 * sc, 64),
+    new THREE.RingGeometry(2.9 * sc, 3.02 * sc, 64),
     new THREE.MeshBasicMaterial({
       color: props.godzilla.glow,
       transparent: true,
@@ -633,56 +741,13 @@ function init() {
   ring.rotation.x = -Math.PI / 2
   ring.position.y = 0.01
   scene.add(ring)
-  const grid = new THREE.GridHelper(8, 16, 0x1d2a22, 0x141f19)
+  const grid = new THREE.GridHelper(9, 18, 0x1d2a22, 0x141f19)
   grid.position.y = 0.005
   scene.add(grid)
 
   kaiju = buildKaiju(props.godzilla.color, props.godzilla.glow)
   scene.add(kaiju)
 
-  // Cincin distorsi Ultima
-  distortRings = []
-  if (bh.rings) {
-    for (let i = 0; i < 2; i++) {
-      const ringMesh = new THREE.Mesh(
-        new THREE.TorusGeometry(1.35 + i * 0.35, 0.012, 8, 90),
-        new THREE.MeshBasicMaterial({
-          color: props.godzilla.glow,
-          transparent: true,
-          opacity: 0.45,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        }),
-      )
-      ringMesh.position.y = 1.5
-      scene.add(ringMesh)
-      distortRings.push(ringMesh)
-    }
-  }
-
-  // Cangkang gelombang kejut Earth
-  pulseShells = []
-  if (bh.attack === 'pulse') {
-    for (let i = 0; i < 3; i++) {
-      const shell = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 24, 16),
-        new THREE.MeshBasicMaterial({
-          color: props.godzilla.glow,
-          transparent: true,
-          opacity: 0,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        }),
-      )
-      shell.position.y = 1.4 * sc
-      shell.visible = false
-      scene.add(shell)
-      pulseShells.push(shell)
-    }
-  }
-
-  // Partikel energi melayang
   const pCount = bh.attack === 'meltdown' ? 160 : 90
   const arr = new Float32Array(pCount * 3)
   for (let i = 0; i < pCount; i++) {
@@ -724,39 +789,167 @@ function init() {
   })
   resizeObserver.observe(el)
 
+  // ===== Mesin perilaku =====
+  // berjalan → mengamati → mengancam → menyerang → memulihkan diri → ulang
+  type State = 'walk' | 'idle' | 'aggro' | 'attack' | 'cool'
   const windows = fireWindows(bh.attack)
   const holdEnd = ATTACK_HOLD[bh.attack]
-  const t0 = performance.now()
+  const durFor = (s: State, n: number): number => {
+    switch (s) {
+      case 'walk':
+        // Siklus pertama lebih singkat agar serangan cepat terlihat
+        return n === 0 ? 3 + 1.5 * rnd(n * 4 + 1) : 6 + 5 * rnd(n * 4 + 1)
+      case 'idle':
+        // Siklus pertama: langsung sigap supaya serangan cepat terlihat
+        return n === 0 ? 1.2 : 2.2 + 2.2 * rnd(n * 4 + 2)
+      case 'aggro':
+        return 1.2
+      case 'attack':
+        return holdEnd + 0.9
+      case 'cool':
+        return 1.5
+    }
+  }
+  const NEXT: Record<State, State> = { walk: 'idle', idle: 'aggro', aggro: 'attack', attack: 'cool', cool: 'walk' }
+  const LABELS: Record<State, string> = {
+    walk: 'Berjalan mengelilingi arena',
+    idle: 'Mengamati sekitar',
+    aggro: 'Mengancam!',
+    attack: 'MENYERANG!',
+    cool: 'Memulihkan diri',
+  }
 
+  // Debug: ?g3d=attack mengunci state (dipakai untuk pengujian visual)
+  const pinned = new URLSearchParams(window.location.search).get('g3d') as State | null
+
+  let state: State = 'walk'
+  let stateT0 = 0
+  let cyc = 0
+  let wWalk = 0
+  let wAggro = 0
+  let walkPhi = rnd(1) * Math.PI * 2 // posisi awal di lintasan
+  let strideTheta = 0
+  let tPrev = 0
+  const R = 1.2 * sc // radius lintasan keliling arena
+  const followTarget = new THREE.Vector3()
+
+  const t0 = performance.now()
   const animate = () => {
     rafId = requestAnimationFrame(animate)
-    const t = ((performance.now() - t0) / 1000) * 1
+    const t = (performance.now() - t0) / 1000
+    const dt = Math.min(0.05, t - tPrev)
+    tPrev = t
+
+    // Transisi state (tombol Serang! melompat langsung ke fase mengancam)
+    if (forceAggro && state !== 'aggro' && state !== 'attack') {
+      forceAggro = false
+      state = 'aggro'
+      stateT0 = t
+      stateLabel.value = LABELS[state]
+    } else if (t - stateT0 > durFor(state, cyc)) {
+      if (state === 'cool') cyc++
+      state = NEXT[state]
+      stateT0 = t
+      stateLabel.value = LABELS[state]
+    }
+    if (pinned && NEXT[pinned]) {
+      state = pinned
+      stateT0 = Math.floor(t / durFor(pinned, 1)) * durFor(pinned, 1)
+      stateLabel.value = LABELS[state]
+    }
+    const sT = t - stateT0
+
+    // Bobot pose di-lerp agar transisi mulus tanpa patah
+    const wWalkT = state === 'walk' ? 1 : 0
+    const wAggroT = state === 'aggro' ? 1 : state === 'attack' ? 0.3 : 0
+    wWalk += (wWalkT - wWalk) * Math.min(1, dt * 3)
+    wAggro += (wAggroT - wAggro) * Math.min(1, dt * 4)
+
     const ts = t * bh.speed
-    // Shin bergerak patah-patah seperti makhluk yang terus bermutasi
     const ti = bh.twitchy ? ts + 0.06 * Math.sin(t * 14) : ts
 
-    // Napas
+    // Fase serangan (hanya berjalan saat state attack/cool)
+    const phase = state === 'attack' ? sT : -1
+    let env = phase < 0 ? 0 : phase < 0.5 ? phase / 0.5 : phase < holdEnd ? 1 : Math.max(0, (holdEnd + 0.6 - phase) / 0.6)
+    env = smooth(env)
+    const firing = phase >= 0 && windows.some(([a, b2]) => phase > a && phase < b2)
+    const flicker = 0.7 + 0.3 * Math.sin(t * 48)
+
+    // ===== Lokomosi: berjalan mengelilingi arena =====
+    walkPhi += bh.walkSpeed * dt * wWalk
+    strideTheta += bh.strideFreq * dt * wWalk
+    const θ = strideTheta
+    if (kaiju) {
+      kaiju.position.x = R * Math.sin(walkPhi)
+      kaiju.position.z = R * Math.cos(walkPhi)
+      const punchTwist = bh.attack === 'punch' ? 0.1 * Math.sin(t * 9) * env : 0
+      kaiju.rotation.y = walkPhi + Math.PI / 2 + punchTwist
+      // Badan naik-turun mengikuti langkah + napas
+      kaiju.position.y = 0.05 * Math.abs(Math.cos(θ)) * wWalk * sc + 0.012 * Math.sin(ti * 1.8) * sc
+      const recoil = bh.attack === 'charge' && firing ? 0.1 * flicker : 0
+      kaiju.rotation.x = bh.lean - recoil
+      kaiju.rotation.z = 0.012 * Math.sin(ti * 0.9)
+    }
+
+    // ===== Kaki: pinggul-lutut-pergelangan =====
+    const stompT = bh.stomper && state === 'aggro' ? sT / 1.2 : -1
+    const stompLift = stompT >= 0 ? (stompT < 0.55 ? smooth(stompT / 0.55) : Math.max(0, 1 - (stompT - 0.55) / 0.18)) : 0
+    legs.forEach((leg, i) => {
+      const off = i * Math.PI
+      const swing = Math.sin(θ + off)
+      const liftP = Math.max(0, Math.sin(θ + off + Math.PI / 2))
+      let hipX = -0.42 * swing * wWalk + 0.12 * wAggro
+      let kneeX = 0.1 + 0.6 * liftP * wWalk + 0.32 * wAggro
+      if (i === 0 && stompLift > 0) {
+        hipX -= 0.85 * stompLift
+        kneeX += 0.95 * stompLift
+      }
+      leg.hip.rotation.x = hipX
+      leg.knee.rotation.x = kneeX
+      leg.ankle.rotation.x = -(hipX + kneeX) * 0.5
+    })
+
+    // Cincin hentakan tanah saat kaki menghantam
+    if (stompRing) {
+      const slam = stompT >= 0 && stompT > 0.62 ? Math.min(1, (stompT - 0.62) / 0.38) : -1
+      const mat = stompRing.material as THREE.MeshBasicMaterial
+      if (slam >= 0) {
+        stompRing.visible = true
+        stompRing.scale.setScalar(0.6 + 2.4 * slam)
+        mat.opacity = 0.55 * (1 - slam)
+      } else {
+        stompRing.visible = false
+        mat.opacity = 0
+      }
+    }
+
+    // ===== Tulang belakang: napas, membungkuk siaga, melengkung saat mengaum =====
+    if (spineLower) {
+      spineLower.rotation.x = 0.04 * Math.sin(ti * 1.8) * 0.3 + 0.08 * wAggro - 0.06 * env
+      spineLower.rotation.z = -0.03 * Math.sin(θ) * wWalk
+    }
+    if (spineUpper) {
+      spineUpper.rotation.x = 0.02 * Math.sin(ti * 1.8) + 0.16 * wAggro - 0.14 * env
+      spineUpper.rotation.y = 0.05 * Math.sin(θ) * wWalk
+    }
+    if (pelvis) {
+      pelvis.rotation.z = 0.05 * Math.sin(θ) * wWalk + 0.012 * Math.sin(ti * 0.9)
+      pelvis.rotation.y = 0.06 * Math.sin(θ) * wWalk
+      pelvis.position.y = 1.05 - 0.1 * wAggro
+    }
     if (chest) {
       const s = 0.018 * Math.sin(ti * 1.8)
       chest.scale.set(1 + s, 0.95 + s, 0.85 + s)
     }
 
-    // ===== Siklus aksi sesuai perilaku varian =====
-    const phase = t % bh.period
-    let env = phase < 0.5 ? phase / 0.5 : phase < holdEnd ? 1 : phase < holdEnd + 0.6 ? (holdEnd + 0.6 - phase) / 0.6 : 0
-    env = env * env * (3 - 2 * env)
-    const firing = windows.some(([a, b2]) => phase > a && phase < b2)
-    const flicker = 0.7 + 0.3 * Math.sin(t * 48)
-
+    // ===== Kepala & rahang =====
     if (jaw) {
       const idle = Math.pow(0.5 + 0.5 * Math.sin(ti * 0.9), 3) * 0.1
-      jaw.rotation.x = 0.06 + idle * (1 - env) + 0.55 * env
+      jaw.rotation.x = 0.06 + idle * (1 - env) + 0.2 * wAggro + 0.55 * env
     }
-
     if (head) {
-      // Pitch kepala: charge menunduk dulu, lainnya mendongak
       if (bh.attack === 'charge') {
-        head.rotation.x = phase < 1.6 ? 0.14 * env : -0.45 * env
+        head.rotation.x = phase >= 0 && phase < 1.6 ? 0.14 * env : -0.45 * env
       } else if (bh.attack === 'sweep') {
         head.rotation.x = -0.22 * env
       } else if (bh.attack === 'punch') {
@@ -764,16 +957,26 @@ function init() {
       } else {
         head.rotation.x = -0.42 * env
       }
-      // Yaw: sapuan saat menembak (1954) atau menoleh santai saat idle
+      head.rotation.x += 0.1 * wAggro - 0.05 * Math.sin(ti * 0.7) * (1 - env) * 0.5
+
       if (bh.attack === 'sweep' && firing) {
         head.rotation.y = 0.42 * Math.sin((phase - 0.6) * 2.4)
       } else {
-        head.rotation.y = bh.headSway * Math.sin(ti * 0.45) * (1 - env)
+        // Saat berhenti mengamati, kepala menoleh lebih lebar
+        const sway = state === 'idle' ? bh.headSway * 1.6 : bh.headSway * 0.6
+        head.rotation.y = sway * Math.sin(ti * 0.45) * (1 - env)
       }
-      if (bh.twitchy) head.rotation.z = 0.045 * Math.sin(t * 16) * (1 - env)
+      // Gelengan kepala saat memulihkan diri setelah menembak
+      if (state === 'cool') {
+        head.rotation.z = 0.1 * Math.sin(sT * 13) * Math.exp(-sT * 2.6)
+      } else if (bh.twitchy) {
+        head.rotation.z = 0.045 * Math.sin(t * 16) * (1 - env)
+      } else {
+        head.rotation.z = 0
+      }
     }
 
-    // Sinar mulut (punch & pulse tidak memakai laser)
+    // ===== Sinar & efek serangan =====
     if (beam) {
       beam.visible = firing
       const bw = bh.beamWidth
@@ -784,25 +987,23 @@ function init() {
     if (mouthLight) mouthLight.intensity = firing ? 55 * flicker : 0
     if (spiral) spiral.rotation.z = t * 13
 
-    // Sinar punggung & ekor Shin
     for (const mb of backBeams) {
       mb.visible = firing
       const ms = 0.8 + 0.35 * Math.sin(t * 40 + mb.position.y * 7)
       mb.scale.set(ms, ms, 1)
     }
 
-    // Tinju Showa: jab kiri-kanan bergantian + sedikit lompatan
-    if (bh.attack === 'punch' && arms.length === 2) {
+    // Tinju Showa: jab bergantian, selain itu lengan mengayun saat berjalan
+    if (bh.attack === 'punch' && env > 0.01 && arms.length === 2) {
       const jabL = Math.max(0, Math.sin(t * 9))
       const jabR = Math.max(0, Math.sin(t * 9 + Math.PI))
-      arms[0]!.rotation.x = (-0.06 - 1.15 * jabL) * env + -0.06 * (1 - env)
-      arms[1]!.rotation.x = (-0.06 - 1.15 * jabR) * env + -0.06 * (1 - env)
-      if (kaiju) kaiju.rotation.y = 0.1 * Math.sin(t * 9) * env
+      arms[0]!.rotation.x = -0.06 - 1.15 * jabL * env
+      arms[1]!.rotation.x = -0.06 - 1.15 * jabR * env
     } else {
       arms.forEach((arm, i) => {
-        arm.rotation.x = -0.05 + 0.035 * Math.sin(ti * 1.8 + i * 2.1)
+        arm.rotation.x =
+          -0.05 + 0.035 * Math.sin(ti * 1.8 + i * 2.1) + 0.3 * Math.sin(θ + (i ? 0 : Math.PI)) * wWalk
       })
-      if (kaiju) kaiju.rotation.y = 0
     }
 
     // Charge Minus One: sirip menyala berurutan ekor → kepala
@@ -816,19 +1017,16 @@ function init() {
       } else {
         chargeFinMats.forEach((m) => (m.emissiveIntensity = base))
       }
-      // Tubuh terpental mundur oleh dorongan tembakan
-      if (kaiju) kaiju.rotation.x = bh.lean - (firing ? 0.1 * flicker : 0)
     }
 
-    // Gelombang kejut Earth: tiga cangkang mengembang bergantian
+    // Gelombang kejut Earth
     pulseShells.forEach((shell, i) => {
       const start = 0.8 + i * 0.55
-      const pw = (phase - start) / 0.9
+      const pw = phase >= 0 ? (phase - start) / 0.9 : -1
       const mat = shell.material as THREE.MeshBasicMaterial
       if (pw > 0 && pw < 1) {
         shell.visible = true
-        const ss = (0.6 + pw * 3.4) * sc
-        shell.scale.setScalar(ss)
+        shell.scale.setScalar(0.6 + pw * 3.4)
         mat.opacity = 0.4 * (1 - pw)
       } else {
         shell.visible = false
@@ -836,41 +1034,35 @@ function init() {
       }
     })
 
-    // Cincin distorsi Ultima berputar pelan
+    // Cincin distorsi Ultima
     distortRings.forEach((rg, i) => {
       rg.rotation.x = Math.PI / 2 + 0.35 * Math.sin(t * 0.6 + i * 1.7)
       rg.rotation.z = t * (0.35 + i * 0.2)
-      rg.position.y = (1.5 + 0.15 * Math.sin(t * 0.8 + i * 2)) * sc
+      rg.position.y = 1.5 + 0.15 * Math.sin(t * 0.8 + i * 2)
       const rm = rg.material as THREE.MeshBasicMaterial
       rm.opacity = 0.3 + 0.25 * env
     })
 
-    // Ekor melambai
+    // Ekor: melambai lebih aktif saat berjalan
+    const tailW = bh.tailAmp * (1 + 0.8 * wWalk)
     tailSegments.forEach((seg, i) => {
-      seg.rotation.y = Math.sin(ti * 1.7 - i * 0.5) * 0.13 * bh.tailAmp
-      seg.rotation.x = Math.sin(ti * 1.1 - i * 0.4) * 0.03 * bh.tailAmp
+      seg.rotation.y = Math.sin(ti * 1.7 - i * 0.5) * 0.13 * tailW
+      seg.rotation.x = Math.sin(ti * 1.1 - i * 0.4) * 0.03 * tailW
     })
 
-    // Sirip berdenyut (charge mengatur siripnya sendiri)
+    // Sirip berdenyut — berkedip cepat saat mengancam
     if (glowMat && bh.attack !== 'charge') {
-      glowMat.emissiveIntensity = 0.9 + 0.35 * Math.sin(t * 2.3) + 1.0 * env
+      glowMat.emissiveIntensity =
+        0.9 + 0.35 * Math.sin(t * 2.3) + 1.0 * env + 0.6 * Math.max(0, Math.sin(t * 9)) * wAggro
     } else if (glowMat) {
-      glowMat.emissiveIntensity = 0.9 + 0.35 * Math.sin(t * 2.3)
+      glowMat.emissiveIntensity = 0.9 + 0.35 * Math.sin(t * 2.3) + 0.6 * Math.max(0, Math.sin(t * 9)) * wAggro
     }
 
-    // Burning: seluruh tubuh ikut membara saat meltdown
     if (bodyMatRef && bh.attack === 'meltdown') {
       bodyMatRef.emissiveIntensity = 0.08 + 0.45 * env + 0.06 * Math.sin(t * 30) * env
     }
 
-    // Badan bergoyang halus
-    if (kaiju) {
-      kaiju.position.y = 0.012 * Math.sin(ti * 1.8)
-      kaiju.rotation.z = 0.012 * Math.sin(ti * 0.9)
-      if (bh.attack !== 'charge') kaiju.rotation.x = bh.lean
-    }
-
-    // Partikel energi naik perlahan
+    // Partikel energi
     if (particles && particleBase) {
       const pos = particles.geometry.attributes.position as THREE.BufferAttribute
       const rate = bh.attack === 'meltdown' ? 0.45 : 0.22
@@ -886,6 +1078,12 @@ function init() {
         )
       }
       pos.needsUpdate = true
+    }
+
+    // Kamera mengikuti Godzilla dengan halus saat ia berkeliling
+    if (controls && kaiju) {
+      followTarget.set(kaiju.position.x, 1.45 * sc, kaiju.position.z)
+      controls.target.lerp(followTarget, Math.min(1, dt * 2.5))
     }
 
     controls?.update()
@@ -910,26 +1108,31 @@ function cleanup() {
   renderer = null
   composer = null
   scene = null
+  kaiju = null
+  pelvis = null
+  spineLower = null
+  spineUpper = null
+  head = null
+  jaw = null
+  legs = []
+  arms = []
   tailSegments = []
   chest = null
-  jaw = null
-  head = null
   beam = null
   beamOuterMat = null
   beamCoreMat = null
   mouthLight = null
   glowMat = null
   bodyMatRef = null
-  kaiju = null
   particles = null
   particleBase = null
   bumpTex = null
-  arms = []
   spiral = null
   backBeams = []
   pulseShells = []
   chargeFinMats = []
   distortRings = []
+  stompRing = null
 }
 
 // Komponen .client.vue: template baru ter-render satu tick setelah mounted,
@@ -945,6 +1148,8 @@ onBeforeUnmount(cleanup)
 <template>
   <div ref="container" class="viewer">
     <span class="attack-label">⚡ {{ bh.label }}</span>
+    <span class="state-label">{{ stateLabel }}</span>
+    <button class="attack-btn" type="button" @click="triggerAttack">⚡ Serang!</button>
     <span class="hint">🖱️ Seret untuk memutar · scroll untuk zoom</span>
   </div>
 </template>
@@ -976,6 +1181,40 @@ onBeforeUnmount(cleanup)
   border-radius: 999px;
   pointer-events: none;
   white-space: nowrap;
+}
+
+.state-label {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.8rem;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.22rem 0.8rem;
+  border-radius: 999px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.attack-btn {
+  position: absolute;
+  bottom: 0.6rem;
+  right: 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0a0e0b;
+  background: var(--accent, #4ade80);
+  border: none;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.attack-btn:hover {
+  transform: scale(1.06);
+  filter: brightness(1.1);
 }
 
 .hint {
