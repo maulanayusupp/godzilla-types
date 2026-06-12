@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#07090a"/>
+  <ellipse cx="600" cy="-40" rx="760" ry="330" fill="#4ade80" opacity="0.09"/>
+  <g stroke="#4ade80" stroke-opacity="0.05">
+    <path d="M0 105 H1200 M0 210 H1200 M0 315 H1200 M0 420 H1200 M0 525 H1200"/>
+    <path d="M120 0 V630 M240 0 V630 M360 0 V630 M480 0 V630 M600 0 V630 M720 0 V630 M840 0 V630 M960 0 V630 M1080 0 V630"/>
+  </g>
+  <g transform="translate(95,150) scale(5.2)">
+    <path d="M10 48 L17 22 L24 39 L32 10 L40 39 L47 22 L54 48 Z" fill="url(#g)"/>
+    <rect x="10" y="50" width="44" height="3.5" rx="1.75" fill="#22c55e" opacity="0.55"/>
+  </g>
+  <text x="474" y="300" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="76" font-weight="800" letter-spacing="3" fill="#eaf2ec">GODZILLA<tspan fill="#4ade80">TYPES</tspan></text>
+  <text x="474" y="372" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="33" fill="#93a89a">Ensiklopedia Macam-Macam Godzilla</text>
+  <text x="474" y="425" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="26" fill="#5f7567">Showa · Heisei · Millennium · Reiwa · MonsterVerse</text>
+</svg>
