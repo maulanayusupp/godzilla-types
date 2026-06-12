@@ -394,7 +394,7 @@ function init() {
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.15
+  renderer.toneMappingExposure = 1.4
   el.appendChild(renderer.domElement)
 
   controls = new OrbitControls(camera, renderer.domElement)
@@ -409,8 +409,8 @@ function init() {
 
   // Pencahayaan sinematik: langit redup, lampu kunci dengan bayangan,
   // fill dingin, dan rim light warna aura
-  scene.add(new THREE.HemisphereLight(0x6b7f72, 0x05080a, 0.5))
-  const key = new THREE.DirectionalLight(0xfff3e0, 1.6)
+  scene.add(new THREE.HemisphereLight(0x6b7f72, 0x05080a, 0.7))
+  const key = new THREE.DirectionalLight(0xfff3e0, 2.0)
   key.position.set(3.5, 6, 3)
   key.castShadow = true
   key.shadow.mapSize.set(1024, 1024)
