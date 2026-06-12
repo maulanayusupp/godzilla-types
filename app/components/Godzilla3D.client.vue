@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import { KaijuAudio } from '~/utils/kaijuAudio'
 import type { Godzilla } from '~/types'
 
 const props = defineProps<{
@@ -36,6 +37,7 @@ interface Behavior {
   beamWidth: number
   walkSpeed: number // kecepatan keliling arena (rad/detik)
   strideFreq: number // frekuensi langkah
+  roarPitch: number // nada raungan (kecil = lebih dalam)
   twitchy?: boolean
   rings?: boolean
   stomper?: boolean // menghentak tanah saat mengancam
@@ -53,21 +55,22 @@ const DEFAULT_BEHAVIOR: Behavior = {
   beamWidth: 1,
   walkSpeed: 0.18,
   strideFreq: 2.2,
+  roarPitch: 1,
 }
 
 const BEHAVIORS: Record<string, Partial<Behavior>> = {
-  'showa-1954': { attack: 'sweep', label: 'Sapuan Atomic Breath', speed: 0.8, tailAmp: 0.8, headSway: 0.12, rotate: 1.2, walkSpeed: 0.13, strideFreq: 1.7, stomper: true },
-  'showa-hero': { attack: 'punch', label: 'Petarung Jarak Dekat', speed: 1.3, tailAmp: 1.2, headSway: 0.2, rotate: 1.8, lean: 0.04, walkSpeed: 0.24, strideFreq: 2.7 },
-  'heisei': { attack: 'spiral', label: 'Spiral Ray', scale: 1.05, speed: 0.9, tailAmp: 0.9, rotate: 1.4, beamWidth: 1.1, walkSpeed: 0.15, strideFreq: 1.9 },
-  'burning': { attack: 'meltdown', label: 'Meltdown Nuklir', scale: 1.05, speed: 1.1, rotate: 1.5, beamWidth: 1.15, walkSpeed: 0.12, strideFreq: 1.8 },
-  'millennium': { attack: 'double', label: 'Tembakan Ganda', speed: 1.3, tailAmp: 1.4, headSway: 0.18, rotate: 2.2, lean: 0.06, walkSpeed: 0.26, strideFreq: 2.8 },
-  'gmk': { attack: 'beam', label: 'Teror Arwah', speed: 0.45, tailAmp: 0.6, headSway: 0.34, rotate: 0.9, lean: 0.03, walkSpeed: 0.1, strideFreq: 1.5 },
-  'shin': { attack: 'backBeams', label: 'Sinar Punggung & Ekor', scale: 1.08, headSway: 0.1, rotate: 1.1, lean: 0.2, beamWidth: 0.6, twitchy: true, walkSpeed: 0.11, strideFreq: 1.8 },
-  'ultima': { attack: 'beam', label: 'Medan Distorsi', speed: 1.2, tailAmp: 1.6, rotate: 1.6, lean: 0.08, beamWidth: 0.9, rings: true, walkSpeed: 0.2, strideFreq: 2.4 },
-  'minus-one': { attack: 'charge', label: 'Isian Daya Sirip', scale: 0.97, speed: 0.9, tailAmp: 0.9, headSway: 0.13, rotate: 1.3, lean: 0.07, beamWidth: 1.7, walkSpeed: 0.16, strideFreq: 2.0 },
-  'earth': { attack: 'pulse', label: 'Gelombang Elektromagnetik', scale: 1.3, speed: 0.5, tailAmp: 0.5, headSway: 0.08, rotate: 0.8, lean: 0.03, walkSpeed: 0.08, strideFreq: 1.25, stomper: true },
-  'legendary': { attack: 'beam', label: 'Atomic Breath Alpha', scale: 1.12, headSway: 0.15, rotate: 1.6, lean: 0, beamWidth: 1.35, walkSpeed: 0.17, strideFreq: 2.0 },
-  'evolved': { attack: 'burst', label: 'Burst Cepat', speed: 1.45, tailAmp: 1.5, headSway: 0.2, rotate: 2.4, lean: 0.04, beamWidth: 0.9, walkSpeed: 0.32, strideFreq: 3.3 },
+  'showa-1954': { attack: 'sweep', label: 'Sapuan Atomic Breath', speed: 0.8, tailAmp: 0.8, headSway: 0.12, rotate: 1.2, walkSpeed: 0.13, strideFreq: 1.7, stomper: true, roarPitch: 0.9 },
+  'showa-hero': { attack: 'punch', label: 'Petarung Jarak Dekat', speed: 1.3, tailAmp: 1.2, headSway: 0.2, rotate: 1.8, lean: 0.04, walkSpeed: 0.24, strideFreq: 2.7, roarPitch: 1.05 },
+  'heisei': { attack: 'spiral', label: 'Spiral Ray', scale: 1.05, speed: 0.9, tailAmp: 0.9, rotate: 1.4, beamWidth: 1.1, walkSpeed: 0.15, strideFreq: 1.9, roarPitch: 0.95 },
+  'burning': { attack: 'meltdown', label: 'Meltdown Nuklir', scale: 1.05, speed: 1.1, rotate: 1.5, beamWidth: 1.15, walkSpeed: 0.12, strideFreq: 1.8, roarPitch: 1.0 },
+  'millennium': { attack: 'double', label: 'Tembakan Ganda', speed: 1.3, tailAmp: 1.4, headSway: 0.18, rotate: 2.2, lean: 0.06, walkSpeed: 0.26, strideFreq: 2.8, roarPitch: 1.1 },
+  'gmk': { attack: 'beam', label: 'Teror Arwah', speed: 0.45, tailAmp: 0.6, headSway: 0.34, rotate: 0.9, lean: 0.03, walkSpeed: 0.1, strideFreq: 1.5, roarPitch: 0.75 },
+  'shin': { attack: 'backBeams', label: 'Sinar Punggung & Ekor', scale: 1.08, headSway: 0.1, rotate: 1.1, lean: 0.2, beamWidth: 0.6, twitchy: true, walkSpeed: 0.11, strideFreq: 1.8, roarPitch: 1.15 },
+  'ultima': { attack: 'beam', label: 'Medan Distorsi', speed: 1.2, tailAmp: 1.6, rotate: 1.6, lean: 0.08, beamWidth: 0.9, rings: true, walkSpeed: 0.2, strideFreq: 2.4, roarPitch: 1.1 },
+  'minus-one': { attack: 'charge', label: 'Isian Daya Sirip', scale: 0.97, speed: 0.9, tailAmp: 0.9, headSway: 0.13, rotate: 1.3, lean: 0.07, beamWidth: 1.7, walkSpeed: 0.16, strideFreq: 2.0, roarPitch: 0.9 },
+  'earth': { attack: 'pulse', label: 'Gelombang Elektromagnetik', scale: 1.3, speed: 0.5, tailAmp: 0.5, headSway: 0.08, rotate: 0.8, lean: 0.03, walkSpeed: 0.08, strideFreq: 1.25, stomper: true, roarPitch: 0.55 },
+  'legendary': { attack: 'beam', label: 'Atomic Breath Alpha', scale: 1.12, headSway: 0.15, rotate: 1.6, lean: 0, beamWidth: 1.35, walkSpeed: 0.17, strideFreq: 2.0, roarPitch: 0.85 },
+  'evolved': { attack: 'burst', label: 'Burst Cepat', speed: 1.45, tailAmp: 1.5, headSway: 0.2, rotate: 2.4, lean: 0.04, beamWidth: 0.9, walkSpeed: 0.32, strideFreq: 3.3, roarPitch: 1.25 },
 }
 
 const bh: Behavior = { ...DEFAULT_BEHAVIOR, ...(BEHAVIORS[props.godzilla.id] ?? {}) }
@@ -117,6 +120,16 @@ const ATTACK_HOLD: Record<AttackKind, number> = {
 
 const container = ref<HTMLDivElement | null>(null)
 const stateLabel = ref('Berjalan mengelilingi arena')
+
+// ===== Suara =====
+let audio: KaijuAudio | null = null
+const soundOn = ref(true)
+
+function toggleSound() {
+  soundOn.value = !soundOn.value
+  audio?.setMuted(!soundOn.value)
+  if (import.meta.client) localStorage.setItem('g3d-sound', soundOn.value ? '1' : '0')
+}
 
 let renderer: THREE.WebGLRenderer | null = null
 let composer: EffectComposer | null = null
@@ -828,6 +841,14 @@ function init() {
   const R = 1.2 * sc // radius lintasan keliling arena
   const followTarget = new THREE.Vector3()
 
+  // Pelacak pemicu suara
+  let prevState: State = state
+  let wasFiring = false
+  let lastStepIdx = 0
+  let stompPlayed = false
+  let lastJabIdx = 0
+  const shellWasOn = [false, false, false]
+
   const t0 = performance.now()
   const animate = () => {
     rafId = requestAnimationFrame(animate)
@@ -855,6 +876,18 @@ function init() {
     }
     const sT = t - stateT0
 
+    // Suara saat berganti fase: menggeram saat mengancam, mengaum saat menyerang
+    if (state !== prevState) {
+      if (state === 'aggro') {
+        audio?.roar(bh.roarPitch * 1.1, 1.0, 0.55)
+        stompPlayed = false
+      } else if (state === 'attack') {
+        audio?.roar(bh.roarPitch, 1.9, 1)
+        if (bh.attack === 'charge') audio?.charge(1.4)
+      }
+      prevState = state
+    }
+
     // Bobot pose di-lerp agar transisi mulus tanpa patah
     const wWalkT = state === 'walk' ? 1 : 0
     const wAggroT = state === 'aggro' ? 1 : state === 'attack' ? 0.3 : 0
@@ -871,6 +904,11 @@ function init() {
     const firing = phase >= 0 && windows.some(([a, b2]) => phase > a && phase < b2)
     const flicker = 0.7 + 0.3 * Math.sin(t * 48)
 
+    // Dengungan sinar menyala/mati mengikuti semburan
+    if (firing && !wasFiring) audio?.beamStart(bh.roarPitch)
+    if (!firing && wasFiring) audio?.beamStop()
+    wasFiring = firing
+
     // ===== Lokomosi: berjalan mengelilingi arena =====
     walkPhi += bh.walkSpeed * dt * wWalk
     strideTheta += bh.strideFreq * dt * wWalk
@@ -885,6 +923,13 @@ function init() {
       const recoil = bh.attack === 'charge' && firing ? 0.1 * flicker : 0
       kaiju.rotation.x = bh.lean - recoil
       kaiju.rotation.z = 0.012 * Math.sin(ti * 0.9)
+    }
+
+    // Dentuman langkah kaki (satu dentuman tiap kaki menapak)
+    const stepIdx = Math.floor(θ / Math.PI)
+    if (stepIdx !== lastStepIdx && wWalk > 0.5) {
+      audio?.step(bh.scale > 1.15)
+      lastStepIdx = stepIdx
     }
 
     // ===== Kaki: pinggul-lutut-pergelangan =====
@@ -910,6 +955,11 @@ function init() {
       const slam = stompT >= 0 && stompT > 0.62 ? Math.min(1, (stompT - 0.62) / 0.38) : -1
       const mat = stompRing.material as THREE.MeshBasicMaterial
       if (slam >= 0) {
+        if (!stompPlayed) {
+          stompPlayed = true
+          audio?.step(true)
+          audio?.whoosh(280, 0.5, 0.5)
+        }
         stompRing.visible = true
         stompRing.scale.setScalar(0.6 + 2.4 * slam)
         mat.opacity = 0.55 * (1 - slam)
@@ -995,6 +1045,12 @@ function init() {
       const jabR = Math.max(0, Math.sin(t * 9 + Math.PI))
       arms[0]!.rotation.x = -0.06 - 1.15 * jabL * env
       arms[1]!.rotation.x = -0.06 - 1.15 * jabR * env
+      // Wuss tiap sabetan tinju
+      const jabIdx = Math.floor((t * 9) / Math.PI)
+      if (jabIdx !== lastJabIdx && env > 0.5) {
+        audio?.whoosh(1300, 0.2, 0.3)
+        lastJabIdx = jabIdx
+      }
     } else {
       arms.forEach((arm, i) => {
         arm.rotation.x =
@@ -1021,10 +1077,15 @@ function init() {
       const pw = phase >= 0 ? (phase - start) / 0.9 : -1
       const mat = shell.material as THREE.MeshBasicMaterial
       if (pw > 0 && pw < 1) {
+        if (!shellWasOn[i]) {
+          shellWasOn[i] = true
+          audio?.whoosh(420, 0.7, 0.5)
+        }
         shell.visible = true
         shell.scale.setScalar(0.6 + pw * 3.4)
         mat.opacity = 0.4 * (1 - pw)
       } else {
+        shellWasOn[i] = false
         shell.visible = false
         mat.opacity = 0
       }
@@ -1135,16 +1196,31 @@ function cleanup() {
 // jadi tunggu nextTick agar ref container terisi.
 onMounted(async () => {
   await nextTick()
+  audio = new KaijuAudio()
+  soundOn.value = localStorage.getItem('g3d-sound') !== '0'
+  audio.setMuted(!soundOn.value)
   init()
 })
 
-onBeforeUnmount(cleanup)
+onBeforeUnmount(() => {
+  audio?.dispose()
+  audio = null
+  cleanup()
+})
 </script>
 
 <template>
   <div ref="container" class="viewer">
     <span class="attack-label">⚡ {{ bh.label }}</span>
     <span class="state-label">{{ stateLabel }}</span>
+    <button
+      class="sound-btn"
+      type="button"
+      :aria-label="soundOn ? 'Matikan suara' : 'Nyalakan suara'"
+      @click="toggleSound"
+    >
+      {{ soundOn ? '🔊' : '🔇' }}
+    </button>
     <span class="hint">🖱️ Seret untuk memutar · scroll untuk zoom</span>
   </div>
 </template>
@@ -1190,6 +1266,28 @@ onBeforeUnmount(cleanup)
   border-radius: 999px;
   pointer-events: none;
   white-space: nowrap;
+}
+
+.sound-btn {
+  position: absolute;
+  bottom: 0.55rem;
+  right: 0.7rem;
+  width: 34px;
+  height: 34px;
+  font-size: 0.95rem;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.sound-btn:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .hint {
